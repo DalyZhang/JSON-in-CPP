@@ -134,6 +134,11 @@ void test5() {
 			->set("12", new Var(1))
 			->set("array", new Var((new VarArray)
 				->push(new Var)
+				->push(new Var(false))
+				->push(new Var(1.6))
+				->push(new Var((new VarArray)
+					->push(new Var)
+				))
 			))
 			->set("hhh", new Var('['))
 			->remove("12")
@@ -155,11 +160,30 @@ void test5() {
 
 	var->write();
 	puts("");
+	printf("var[3][\"array\"][0] = ");
+	var->array()[3].object()["array"].array()[0].write();
+	puts("");
 
 	printf("String rest: %i\n", String::rest);
 	printf("UnicodeString rest: %i\n", UnicodeString::rest);
 	printf("Var rest: %i\n", Var::rest);
 	printf("HashTable rest: %i\n", HashTable::rest);
+
+}
+
+void test6() {
+
+	FILE *fp = fopen("gbk-test.txt", "rb");
+
+	char buffer[1000];
+	fgets(buffer, 1000, fp);
+	String string(buffer);
+	UnicodeString uString(string, Coding::UTF8);
+
+	printf("used buffer length: %i\n", strlen(buffer));
+	printf("string length: %i\n", string.getLength());
+	printf("unicode string length: %i\n", uString.getLength());
+	uString.write(Coding::UTF8, fopen("gay.txt", "wb"));
 
 }
 
@@ -205,7 +229,7 @@ int main() {
 	// puts("get");
 	// A e = plus(A(1), A(2));
 
-	test5();
+	test6();
 
 	return 0;
 

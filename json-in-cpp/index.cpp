@@ -4,8 +4,14 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <ctime>
 
 #define HASH_TABLC_LINK_LIST_LENGTH_DEFAULT 255
+#define CODING_FILE_GBK __FILE__"/../gbk.txt"
+
+namespace Coding {
+	enum Coding {RAW, UTF8, GBK, EASCII, UCS2, UCS4};
+}
 
 template<class Pointer, class Result> class Iterator;
 class String;
@@ -32,6 +38,7 @@ private:
 	char *source = nullptr;
 public:
 	static int rest;
+
 	String();
 	String(const String &copied);
 	String(const char *cString);
@@ -55,23 +62,30 @@ public:
 
 	void write(FILE *fp = stdout) const;
 
-	// UnicodeString *encode(UnicodeString::Coding coding = UnicodeString::C_ASCII);
-	// void decodeAssign(UnicodeString &decoded, UnicodeString::Coding coding = UnicodeString::C_ASCII);
+	// UnicodeString *encode(UnicodeString::Coding coding = Coding::RAW);
+	// void decodeAssign(UnicodeString &decoded, UnicodeString::Coding coding = Coding::RAW);
 };
 
 class UnicodeString {
 	// friend class String;
-public:
-	enum Coding {C_ASCII, C_UTF8, C_GBK};
 private:
+	static char32_t NotATable;
+	static char32_t GBKToUnicodeTable[0x10000];
+	static char32_t UnicodeToGBKTable[0x10000];
+	static char32_t createCodingTable();
+	static void createCodingTableGBK();
 	int length;
 	char32_t *source = nullptr;
+	UnicodeString(const char32_t *copiedSource, int length);
+	static int countByteLead1(char byte);
 public:
 	static int rest;
+
+	typedef Coding::Coding Coding;
+
 	UnicodeString();
 	UnicodeString(const UnicodeString &copied);
-	UnicodeString(const char32_t *copiedSource, int length);
-	UnicodeString(const String &encoded, Coding coding = C_ASCII);
+	UnicodeString(const String &encoded, Coding coding = Coding::RAW);
 	~UnicodeString();
 
 	int getLength() const;
@@ -81,15 +95,15 @@ public:
 	UnicodeString &copyAssign(const UnicodeString &copied);
 	UnicodeString operator=(const UnicodeString &copied);
 
-	void write(Coding coding = C_ASCII, FILE *fp = stdout) const;
+	void write(Coding coding = Coding::RAW, FILE *fp = stdout) const;
 
 	static bool compare(const UnicodeString &a, const UnicodeString &b);
 	bool operator==(const UnicodeString &right);
 
-	String *decode(Coding coding = C_ASCII);
-	void encodeAssign(const String &encoded, Coding coding = C_ASCII);
-	static void encodeAssign(UnicodeString &target, const String &encoded, Coding coding = C_ASCII);
-	static void decodeAssign(String &target, const UnicodeString &decoded, Coding coding = C_ASCII);
+	String *decode(Coding coding = Coding::RAW);
+	void encodeAssign(const String &encoded, Coding coding = Coding::RAW);
+	static void encodeAssign(UnicodeString &target, const String &encoded, Coding coding = Coding::RAW);
+	static void decodeAssign(String &target, const UnicodeString &decoded, Coding coding = Coding::RAW);
 };
 
 class HashTable {
@@ -120,27 +134,27 @@ private:
 public:
 	static int rest;
 
-	typedef UnicodeString::Coding Coding;
+	typedef Coding::Coding Coding;
 
 	HashTable(const HashTable &copied);
 	HashTable(int linkListLength = HASH_TABLC_LINK_LIST_LENGTH_DEFAULT);
 	~HashTable();
 
-	Var *get(const char *cStringKey, Coding coding = UnicodeString::C_ASCII) const;
+	Var *get(const char *cStringKey, Coding coding = Coding::RAW) const;
 	Var *get(const UnicodeString &key) const;
 
-	HashTable *set(const char *cStringKey, Var *value, bool deleteOccupied = true, Coding coding = UnicodeString::C_ASCII);
+	HashTable *set(const char *cStringKey, Var *value, bool deleteOccupied = true, Coding coding = Coding::RAW);
 	HashTable *set(const UnicodeString &key, Var *value, bool deleteOccupied = true);
 
-	bool has(const char *cStringKey, Coding coding = UnicodeString::C_ASCII);
+	bool has(const char *cStringKey, Coding coding = Coding::RAW);
 	bool has(const UnicodeString &key);
 
-	HashTable *remove(const char *cStringKey, bool deleteOccupied = true, Coding coding = UnicodeString::C_ASCII);
+	HashTable *remove(const char *cStringKey, bool deleteOccupied = true, Coding coding = Coding::RAW);
 	HashTable *remove(const UnicodeString &key, bool deleteOccupied = true);
 
 	HashTable *clear(bool deleteOccupied = true);
 
-	void write(Coding coding = UnicodeString::C_ASCII, FILE *fp = stdout) const;
+	void write(Coding coding = Coding::RAW, FILE *fp = stdout) const;
 
 	int getLinkListLength() const;
 	int getLength() const;
@@ -151,7 +165,7 @@ public:
 	Var &operator[](const char *cStringKey);
 	Var &operator[](const UnicodeString &key);
 	
-	void writeLinkList(Coding coding = UnicodeString::C_ASCII, FILE *fp = stdout);
+	void writeLinkList(Coding coding = Coding::RAW, FILE *fp = stdout);
 };
 
 class VarArray {
@@ -171,7 +185,7 @@ private:
 public:
 	static int rest;
 
-	typedef UnicodeString::Coding Coding;
+	typedef Coding::Coding Coding;
 
 	VarArray();
 	VarArray(const VarArray &copied, int start = 0);
@@ -193,7 +207,7 @@ public:
 	Iterator begin() const;
 	Iterator end() const;
 
-	void write(Coding coding = UnicodeString::C_ASCII, FILE *fp = stdout) const;
+	void write(Coding coding = Coding::RAW, FILE *fp = stdout) const;
 };
 
 class Var {
@@ -211,6 +225,8 @@ private:
 public:
 	static int rest;
 
+	typedef Coding::Coding Coding;
+
 	Var();
 	Var(const Var& copied);
 	Var(void *null);
@@ -218,9 +234,9 @@ public:
 	Var(double number);
 	Var(bool boolean);
 	Var(const UnicodeString &string);
-	Var(const String &rawString, UnicodeString::Coding coding = UnicodeString::C_ASCII);
-	Var(const char *cString, UnicodeString::Coding coding = UnicodeString::C_ASCII);
-	Var(char character, UnicodeString::Coding coding = UnicodeString::C_ASCII);
+	Var(const String &rawString, Coding coding = Coding::RAW);
+	Var(const char *cString, Coding coding = Coding::RAW);
+	Var(char character, Coding coding = Coding::RAW);
 	Var(HashTable *object);
 	Var(VarArray *array);
 	~Var();
@@ -247,13 +263,13 @@ public:
 	void set(double number);
 	void set(bool boolean);
 	void set(const UnicodeString &string);
-	void set(const String &rawString, UnicodeString::Coding coding = UnicodeString::C_ASCII);
-	void set(const char *cString, UnicodeString::Coding coding = UnicodeString::C_ASCII);
-	void set(char character, UnicodeString::Coding coding = UnicodeString::C_ASCII);
+	void set(const String &rawString, UnicodeString::Coding coding = Coding::RAW);
+	void set(const char *cString, UnicodeString::Coding coding = Coding::RAW);
+	void set(char character, UnicodeString::Coding coding = Coding::RAW);
 	void set(HashTable *object);
 	void set(VarArray *array);
 
-	void write(UnicodeString::Coding coding = UnicodeString::C_ASCII, FILE *fp = stdout);
+	void write(UnicodeString::Coding coding = Coding::RAW, FILE *fp = stdout);
 
 };
 

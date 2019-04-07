@@ -228,7 +228,7 @@ HashTable::Iterator HashTable::end() const {
 }
 
 Var &HashTable::operator[](const char *cStringKey) {
-	return (*this)[UnicodeString(cStringKey, UnicodeString::C_ASCII)];
+	return (*this)[UnicodeString(cStringKey, Coding::RAW)];
 }
 
 Var &HashTable::operator[](const UnicodeString &key) {
