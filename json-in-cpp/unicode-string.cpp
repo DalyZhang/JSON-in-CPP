@@ -10,15 +10,14 @@ char32_t UnicodeString::createCodingTable() {
 }
 
 void UnicodeString::createCodingTableGBK() {
-	FILE *GBKFile = fopen(CODING_FILE_GBK, "rb");
-	if (GBKFile == nullptr) {
-		puts("GBK coding file does not exist!");
-		exit(1);
-	}
-	int GBKChar, UnicodeChar;
-	while (fscanf(GBKFile, "%X %X", &GBKChar, &UnicodeChar) != EOF) {
-		GBKToUnicodeTable[(unsigned)GBKChar] = UnicodeChar;
-		UnicodeToGBKTable[(unsigned)UnicodeChar] = GBKChar;
+	int rawTable[] = CODING_FILE_GBK;
+	int rawTableLength = sizeof (rawTable) / sizeof (rawTable[0]);
+	unsigned int GBKChar, UnicodeChar;
+	for (int i1 = 0; i1 < rawTableLength; i1 += 2) {
+		GBKChar = rawTable[i1];
+		UnicodeChar = rawTable[i1 + 1];
+		GBKToUnicodeTable[GBKChar] = UnicodeChar;
+		UnicodeToGBKTable[UnicodeChar] = GBKChar;
 	}
 }
 
@@ -49,6 +48,9 @@ UnicodeString::UnicodeString(const char32_t *copiedSource, int length) {
 	source = new char32_t[length + 1]{};
 	memcpy(source, copiedSource, length * sizeof (source[0]));
 }
+
+UnicodeString::UnicodeString(const char *cString, Coding coding)
+	: UnicodeString(String(cString), coding) {}
 
 UnicodeString::UnicodeString(const String &encoded, Coding coding) {
 	rest++;

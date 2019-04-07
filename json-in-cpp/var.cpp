@@ -190,7 +190,7 @@ void Var::set(const String &rawString, UnicodeString::Coding coding) {
 }
 
 void Var::set(const char *cString, UnicodeString::Coding coding) {
-	set(String(cString), coding);
+	set(UnicodeString(cString, coding));
 }
 
 void Var::set(char character, UnicodeString::Coding coding) {

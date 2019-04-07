@@ -4,41 +4,7 @@
 
 #include "json-in-cpp/index.cpp"
 
-// void test1() {
-
-// 	// set get [] has remove clear getLength begin end
-// 	HashTable ht(255);
-// 	printf("length: %i\n", ht.getLength());
-// 	ht.set("123", (JSON *)"789");
-// 	ht.set("123", (JSON *)"12");
-// 	ht.set("123", (JSON *)"41");
-// 	ht.set("124", (JSON *)"36");
-// 	ht.set("aaavvv", (JSON *)"3456ss6");
-// 	for (auto &key : ht) {
-// 		printf("for key[%s]: %s\n", key, &ht[key]);
-// 	}
-// 	// printf("%s", ht.get("123"));
-// 	printf("length: %i\n", ht.getLength());
-// 	printf("key[123]: %s\n", &ht["123"]);
-// 	puts(ht.has("124") ? "true" : "false");
-// 	puts(ht.has("125") ? "true" : "false");
-// 	puts(ht.remove("124") ? "true" : "false");
-// 	printf("length: %i\n", ht.getLength());
-// 	puts(ht.has("124") ? "true" : "false");
-// 	ht.set("124", (JSON *)"36");
-// 	printf("length: %i\n", ht.getLength());
-// 	printf("key[124]: %s\n", &ht["124"]);
-// 	puts(ht.has("124") ? "true" : "false");
-// 	puts(ht.has("123") ? "true" : "false");
-// 	printf("key[123]: %s\n", &ht["123"]);
-// 	ht.clear();
-// 	printf("length: %i\n", ht.getLength());
-// 	puts(ht.has("123") ? "true" : "false");
-// 	printf("linkListLength: %i\n", ht.getLinkListLength());
-
-// }
-
-void test2() {
+void testHashTable1() {
 
 	HashTable ht(255);
 
@@ -69,31 +35,7 @@ void test2() {
 
 }
 
-// void test3() {
-
-// 	const char *raw = "123456aaa\000334";
-
-// 	String str = String(raw, 12);
-// 	UnicodeString ustr(str);
-
-// 	printf("str[0] = '%c'\n", str.at(0));
-// 	printf("ustr[0] = %i\n", ustr.at(0));
-// 	ustr.write();
-// 	puts("");
-
-// 	String *newStr = ustr.decode();
-// 	newStr->write();
-// 	puts("");
-
-// 	UnicodeString newUstr = ustr;
-// 	ustr.write();
-// 	puts("==");
-
-// 	puts(str.cString());
-
-// }
-
-void test4() {
+void testHashTable2() {
 
 	HashTable &ht = *((new HashTable(101))
 		->set("addd", new Var("123.12"))
@@ -112,7 +54,7 @@ void test4() {
 	ht.writeLinkList();
 	ht.write();
 	puts("");
-	printf("number: %g\n", ht["e"].object()["a"].number());
+	printf("ht[\"e\"][\"a\"] = %g\n", ht["e"].object()["a"].number());
 	// delete &ht;
 
 	printf("String rest: %i\n", String::rest);
@@ -122,7 +64,7 @@ void test4() {
 
 }
 
-void test5() {
+void testVar() {
 
 	Var *var = new Var((new VarArray)
 		->push(new Var(1.1))
@@ -171,7 +113,7 @@ void test5() {
 
 }
 
-void test6() {
+void testCoding() {
 
 	FILE *fp = fopen("gbk-test.txt", "rb");
 
@@ -183,53 +125,13 @@ void test6() {
 	printf("used buffer length: %i\n", strlen(buffer));
 	printf("string length: %i\n", string.getLength());
 	printf("unicode string length: %i\n", uString.getLength());
-	uString.write(Coding::UTF8, fopen("gay.txt", "wb"));
+	uString.write(Coding::GBK);
 
 }
 
-// class A {
-// public:
-// 	int a;
-// 	A(int num = 0) : a(num) {
-// 		printf("new: %i in %p\n", num, this);
-// 	}
-// 	A(const A &origin) {
-// 		a = origin.a;
-// 	}
-// 	~A() {
-// 		printf("delete: %i\n", a);
-// 	}
-// 	A operator+(const A &right) {
-// 		return A(this->a + right.a);
-// 	}
-// };
-
-// void p(const A &a) {
-// 	printf("%i\n", a.a);
-// }
-
-// void test5() {
-// 	p(A());
-// }
-
-// A plus(const A &a, const A &b) {
-// 	return A(a.a + b.a);
-// }
-
 int main() {
 
-	// A a = A(1) + A(2) + A(4);
-	// printf("get a in %p\n", &a);
-	// int b = 5;
-	// printf("get b in %p\n", &b);
-	// int c = 5;
-	// printf("get c in %p\n", &c);
-	// A d = A(6) + A(3) + A(1);
-	// printf("get d in %p\n", &d);
-	// puts("get");
-	// A e = plus(A(1), A(2));
-
-	test6();
+	testCoding();
 
 	return 0;
 
