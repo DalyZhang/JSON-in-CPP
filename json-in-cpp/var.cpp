@@ -54,17 +54,17 @@ Var::Var(const UnicodeString &string) {
 	set(string);
 }
 
-Var::Var(const String &rawString, UnicodeString::Coding coding) {
+Var::Var(const String &rawString, Coding coding) {
 	rest++;
 	set(rawString, coding);
 }
 
-Var::Var(const char *cString, UnicodeString::Coding coding) {
+Var::Var(const char *cString, Coding coding) {
 	rest++;
 	set(cString, coding);
 }
 
-Var::Var(char character, UnicodeString::Coding coding) {
+Var::Var(char character, Coding coding) {
 	rest++;
 	set(character, coding);
 }
@@ -185,15 +185,15 @@ void Var::set(const UnicodeString &string) {
 	value.s = new UnicodeString(string);
 }
 
-void Var::set(const String &rawString, UnicodeString::Coding coding) {
+void Var::set(const String &rawString, Coding coding) {
 	set(UnicodeString(rawString, coding));
 }
 
-void Var::set(const char *cString, UnicodeString::Coding coding) {
+void Var::set(const char *cString, Coding coding) {
 	set(UnicodeString(cString, coding));
 }
 
-void Var::set(char character, UnicodeString::Coding coding) {
+void Var::set(char character, Coding coding) {
 	String rawString(character);
 	set(rawString, coding);
 }
@@ -210,7 +210,7 @@ void Var::set(VarArray *array) {
 	value.a = array;
 }
 
-void Var::write(UnicodeString::Coding coding, FILE *fp) {
+void Var::write(Coding coding, FILE *fp) {
 	switch (type) {
 	case T_NULL:
 		fprintf(fp, "null");

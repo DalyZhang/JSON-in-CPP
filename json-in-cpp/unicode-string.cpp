@@ -21,7 +21,7 @@ void UnicodeString::createCodingTableGBK() {
 	}
 }
 
-int UnicodeString::countByteLead1(char byte) {
+int UnicodeString::countByteLeadOne(char byte) {
 	unsigned char andMask = 0b10000000;
 	for (int i1 = 0; i1 < 8; i1++, andMask >>= 1) {
 		if (!(byte & andMask)) {
@@ -29,6 +29,20 @@ int UnicodeString::countByteLead1(char byte) {
 		}
 	}
 	return 8;
+}
+
+void UnicodeString::combineTwoBytes(char16_t &twoBytes, unsigned char nearStart, unsigned char nearEnd, bool isBigEndian) {
+	twoBytes = isBigEndian ? (nearStart << 8) | nearEnd : (nearEnd << 8) | nearStart;
+}
+
+void UnicodeString::divideTwoBytes(unsigned short twoBytes, char &nearStart, char &nearEnd, bool isBigEndian) {
+	if (isBigEndian) {
+		nearStart = (char)(twoBytes >> 8);
+		nearEnd = (char)twoBytes;
+	} else {
+		nearStart = (char)twoBytes;
+		nearEnd = (char)(twoBytes >> 8);
+	}
 }
 
 int UnicodeString::rest = 0;
@@ -67,7 +81,11 @@ int UnicodeString::getLength() const {
 	return length;
 }
 
-char32_t &UnicodeString::at(int offset) const {
+char32_t &UnicodeString::at(const int &offset) const {
+	return source[offset];
+}
+
+char32_t &UnicodeString::operator[](const int &offset) const {
 	return source[offset];
 }
 
@@ -114,7 +132,8 @@ void UnicodeString::encodeAssign(const String &encoded, Coding coding) {
 void UnicodeString::encodeAssign(UnicodeString &target, const String &encoded, Coding coding) {
 
 	int i1, i2, i3, i4;
-	char32_t uc1, uc2;
+	char32_t u4c1, u4c2;
+	char16_t u2c1, u2c2;
 
 	int length = 0;
 	char32_t *source = nullptr;
@@ -132,22 +151,22 @@ void UnicodeString::encodeAssign(UnicodeString &target, const String &encoded, C
 	case Coding::GBK:
 		source = new char32_t[encoded.length + 1]{};
 		for (i1 = i2 = 0; i1 < encoded.length; i2++) {
-			uc1 = 0;
+			u4c1 = 0;
 			if ((unsigned)encoded.source[i1] > 0x80) {
 				if (i1 + 1 == encoded.length) {
 					isValid = false;
 					break;
 				}
-				memset(&uc1, encoded.source[i1 + 1], 1);
-				memset((char *)&uc1 + 1, encoded.source[i1], 1);
+				memset(&u4c1, encoded.source[i1 + 1], 1);
+				memset((char *)&u4c1 + 1, encoded.source[i1], 1);
 				i1 += 2;
 			} else {
-				memset(&uc1, encoded.source[i1], 1);
+				memset(&u4c1, encoded.source[i1], 1);
 				i1++;
 			}
-			uc2 = GBKToUnicodeTable[(unsigned)uc1];
-			if (uc2 != 0 || uc1 == 0) {
-				source[i2] = uc2;
+			u4c2 = GBKToUnicodeTable[(unsigned)u4c1];
+			if (u4c2 != 0 || u4c1 == 0) {
+				source[i2] = u4c2;
 			} else {
 				isValid = false;
 				break;
@@ -159,7 +178,7 @@ void UnicodeString::encodeAssign(UnicodeString &target, const String &encoded, C
 	case Coding::UTF8:
 		source = new char32_t[encoded.length + 1]{};
 		for (i1 = i2 = 0; i1 < encoded.length; i2++) {
-			i3 = countByteLead1(encoded.source[i1]);
+			i3 = countByteLeadOne(encoded.source[i1]);
 			if (i3 == 1) {
 				isValid = false;
 				break;
@@ -170,12 +189,42 @@ void UnicodeString::encodeAssign(UnicodeString &target, const String &encoded, C
 				source[i2] = (char32_t)(encoded.source[i1] & ~(~0 << (8 - i3)));
 				i1++;
 				for (i4 = 1; i4 < i3; i4++, i1++) {
-					if (i1 == encoded.length || countByteLead1(encoded.source[i1]) != 1) {
+					if (i1 == encoded.length || countByteLeadOne(encoded.source[i1]) != 1) {
 						isValid = false;
 						break;
 					}
 					source[i2] = (source[i2] << 6) | (encoded.source[i1] & 0b00111111);
 				}
+			}
+		}
+		length = i2;
+		break;
+
+	case Coding::UTF16BE: case Coding::UTF16LE:
+		if (encoded.length & 1) {
+			isValid = true;
+			break;
+		}
+		source = new char32_t[(encoded.length >> 1) + 1];
+		for (i1 = i2 = 0; i1 < encoded.length; i2++) {
+			combineTwoBytes(u2c1, encoded.source[i1], encoded.source[i1 + 1],
+				coding == Coding::UTF16BE);
+			i1 += 2;
+			if ((u2c1 ^ 0xD800) >> 10) {
+				source[i2] = u2c1;
+			} else {
+				if (i1 == encoded.length) {
+					isValid = false;
+					break;
+				}
+				combineTwoBytes(u2c2, encoded.source[i1], encoded.source[i1 + 1],
+					coding == Coding::UTF16BE);
+				if ((u2c2 ^ 0xDC00) >> 10) {
+					isValid = false;
+					break;
+				}
+				i1 += 2;
+				source[i2] = ((u2c1 & ~(~0 << 10)) << 10) | (u2c2 & ~(~0 << 10)) + 0x10000;
 			}
 		}
 		length = i2;
@@ -192,7 +241,9 @@ void UnicodeString::encodeAssign(UnicodeString &target, const String &encoded, C
 		memcpy(source, oldSource, sizeof (source[0]) * length);
 		delete[] oldSource;
 	} else {
-		delete[] source;
+		if (source != nullptr) {
+			delete[] source;
+		}
 		source = new char32_t[1]{};
 		length = 0;
 	}
@@ -204,7 +255,7 @@ void UnicodeString::encodeAssign(UnicodeString &target, const String &encoded, C
 void UnicodeString::decodeAssign(String &target, const UnicodeString &decoded, Coding coding) {
 
 	int i1, i2, i3, i4;
-	char32_t uc1, uc2;
+	char32_t u4c1, u4c2;
 
 	int length = 0;
 	char *source = nullptr;
@@ -222,15 +273,15 @@ void UnicodeString::decodeAssign(String &target, const UnicodeString &decoded, C
 	case Coding::GBK:
 		source = new char[decoded.length * 2 + 1]{};
 		for (i1 = i2 = 0; i1 < decoded.length; i1++) {
-			uc1 = decoded.source[i1];
-			uc2 = UnicodeToGBKTable[(unsigned)uc1];
-			if (uc2 != 0 || uc1 == 0) {
-				if (uc2 & ~0xFF) {
-					source[i2] = (char)((uc2 >> 8) & 0xFF);
-					source[i2 + 1] = (char)(uc2 & 0xFF);
+			u4c1 = decoded.source[i1];
+			u4c2 = UnicodeToGBKTable[(unsigned)u4c1];
+			if (u4c2 != 0 || u4c1 == 0) {
+				if (u4c2 & ~0xFF) {
+					source[i2] = (char)((u4c2 >> 8) & 0xFF);
+					source[i2 + 1] = (char)(u4c2 & 0xFF);
 					i2 += 2;
 				} else {
-					source[i2] = (char)uc2;
+					source[i2] = (char)u4c2;
 					i2++;
 				}
 			} else {
@@ -244,28 +295,52 @@ void UnicodeString::decodeAssign(String &target, const UnicodeString &decoded, C
 	case Coding::UTF8:
 		source = new char[decoded.length * 4 + 1]{};
 		for (i1 = i2 = 0; i1 < decoded.length; i1++) {
-			uc1 = decoded.source[i1];
-			if (uc1 < 0) {
+			u4c1 = decoded.source[i1];
+			if (u4c1 < 0) {
 				isValid = false;
 				break;
-			} else if (uc1 < 0x80) {
-				source[i2] = (char)uc1;
+			} else if (u4c1 < 0x80) {
+				source[i2] = (char)u4c1;
 				i2++;
 				continue;
-			} else if (uc1 < 0x800) {
+			} else if (u4c1 < 0x800) {
 				i3 = 2;
-			} else if (uc1 < 0x10000) {
+			} else if (u4c1 < 0x10000) {
 				i3 = 3;
-			} else if (uc1 < 0x110000) {
+			} else if (u4c1 < 0x110000) {
 				i3 = 4;
 			} else {
 				isValid = false;
 				break;
 			}
-			source[i2] = (~0 << (8 - i3)) | (uc1 >> ((i3 - 1) * 6));
+			source[i2] = (~0 << (8 - i3)) | (u4c1 >> ((i3 - 1) * 6));
 			i2++;
 			for (i4 = i3 - 2; i4 > -1; i4--, i2++) {
-				source[i2] = 0b10000000 | ((uc1 >> (i4 * 6)) & 0b00111111);
+				source[i2] = 0b10000000 | ((u4c1 >> (i4 * 6)) & 0b00111111);
+			}
+		}
+		length = i2;
+		break;
+
+	case Coding::UTF16BE: case Coding::UTF16LE:
+		source = new char[decoded.length * 4 + 1]{};
+		for (i1 = i2 = 0; i1 < decoded.length; i1++) {
+			u4c1 = decoded.source[i1];
+			if ((u4c1 >= 0 && u4c1 < 0xD800) || (u4c1 >= 0xE000 && u4c1 < 0x10000)) {
+				divideTwoBytes((unsigned short)u4c1, source[i2], source[i2 + 1],
+					coding == Coding::UTF16BE);
+				i2 += 2;
+			} else if (u4c1 >= 0x10000 && u4c1 < 0x110000) {
+				u4c1 -= 0x10000;
+				divideTwoBytes((unsigned short)((u4c1 >> 10) | 0xD800), source[i2], source[i2 + 1],
+					coding == Coding::UTF16BE);
+				i2 += 2;
+				divideTwoBytes((unsigned short)((u4c1 & ~(~0 << 10)) | 0xDC00), source[i2], source[i2 + 1],
+					coding == Coding::UTF16BE);
+				i2 += 2;
+			} else {
+				isValid = false;
+				break;
 			}
 		}
 		length = i2;

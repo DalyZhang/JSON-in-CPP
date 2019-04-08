@@ -37,7 +37,11 @@ const char *String::cString() {
 	return source;
 }
 
-char &String::at(int offset) const {
+char &String::at(const int &offset) const {
+	return source[offset];
+}
+
+char &String::operator[](const int &offset) const {
 	return source[offset];
 }
 
@@ -69,10 +73,10 @@ void String::write(FILE *fp) const {
 	fwrite(source, sizeof (char), length, fp);
 }
 
-// UnicodeString *String::encode(UnicodeString::Coding coding) {
+// UnicodeString *String::encode(Coding coding) {
 // 	return new UnicodeString(*this, coding);
 // }
 
-// void String::decodeAssign(UnicodeString &decoded, UnicodeString::Coding coding) {
+// void String::decodeAssign(UnicodeString &decoded, Coding coding) {
 // 	UnicodeString::decodeAssign(*this, decoded, coding);
 // }

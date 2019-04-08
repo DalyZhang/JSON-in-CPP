@@ -58,11 +58,11 @@ VarArray::~VarArray() {
 	delete[] source;
 }
 
-Var &VarArray::at(int offset) const {
+Var &VarArray::at(const int &offset) const {
 	return *source[offset];
 }
 
-Var &VarArray::operator[](int offset) const {
+Var &VarArray::operator[](const int &offset) const {
 	return *source[offset];
 }
 

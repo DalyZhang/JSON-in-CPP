@@ -4,6 +4,16 @@
 
 #include "json-in-cpp/index.cpp"
 
+long long getFileSize(FILE *fp) {
+	fpos_t size;
+	fpos_t currentPos;
+	fgetpos(fp, &currentPos);
+	fseek(fp, 0, SEEK_END);
+	fgetpos(fp, &size);
+	fseek(fp, currentPos, SEEK_SET);
+	return size;
+}
+
 void testHashTable1() {
 
 	HashTable ht(255);
@@ -115,17 +125,31 @@ void testVar() {
 
 void testCoding() {
 
-	FILE *fp = fopen("gbk-test.txt", "rb");
-
+	FILE *fp = fopen("utf16le-test.txt", "rb");
 	char buffer[1000];
-	fgets(buffer, 1000, fp);
-	String string(buffer);
-	UnicodeString uString(string, Coding::UTF8);
+	fseek(fp, 2, SEEK_SET);
+	fread(buffer, 1, 1000, fp);
+	String string(buffer, getFileSize(fp) - 2);
+	UnicodeString uString(string, Coding::UTF16LE);
+	
+	// FILE *fp = fopen("cc.txt", "rb");
+	// char buffer[1000];
+	// fgets(buffer, 1000, fp);
+	// String string(buffer);
+	// UnicodeString uString(string, Coding::UTF8);
 
-	printf("used buffer length: %i\n", strlen(buffer));
+	printf("cString length: %i\n", strlen(buffer));
 	printf("string length: %i\n", string.getLength());
 	printf("unicode string length: %i\n", uString.getLength());
-	uString.write(Coding::GBK);
+
+	FILE *writen = fopen("result.txt", "wb");
+	fputc(0xFE, writen);
+	fputc(0xFF, writen);
+	// fputc(0xFE, writen);
+	uString.write(Coding::UTF16BE, writen);
+	for (int i1 = 0; i1 < uString.getLength(); i1++) {
+		printf(" 0x%X", uString[i1]);
+	}
 
 }
 

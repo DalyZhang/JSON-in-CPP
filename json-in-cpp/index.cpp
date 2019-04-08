@@ -1,5 +1,5 @@
-#ifndef __DALY_Var_IN_CPP
-#define __DALY_Var_IN_CPP
+#ifndef __DALY_JSON_IN_CPP
+#define __DALY_JSON_IN_CPP
 
 #include <cstdio>
 #include <cstring>
@@ -11,7 +11,7 @@
 #define CODING_SETTING_DEFAULT Coding::UTF8
 
 namespace Coding {
-	enum Coding {RAW, UTF8, GBK, EASCII, UCS2, UCS4};
+	enum Coding {RAW, UTF8, UTF16BE, UTF16LE, GBK, EASCII, UCS2, UCS4};
 }
 
 class String;
@@ -39,7 +39,8 @@ public:
 
 	const char *cString();
 
-	char &at(int offset) const;
+	char &at(const int &offset) const;
+	char &operator[](const int &offset) const;
 
 	String &copyAssign(const char *cString);
 	String &copyAssign(const String &copied);
@@ -51,8 +52,8 @@ public:
 
 	void write(FILE *fp = stdout) const;
 
-	// UnicodeString *encode(UnicodeString::Coding coding = CODING_SETTING_DEFAULT);
-	// void decodeAssign(UnicodeString &decoded, UnicodeString::Coding coding = CODING_SETTING_DEFAULT);
+	// UnicodeString *encode(Coding coding = CODING_SETTING_DEFAULT);
+	// void decodeAssign(UnicodeString &decoded, Coding coding = CODING_SETTING_DEFAULT);
 };
 
 class UnicodeString {
@@ -66,7 +67,9 @@ private:
 	int length;
 	char32_t *source = nullptr;
 	UnicodeString(const char32_t *copiedSource, int length);
-	static int countByteLead1(char byte);
+	static int countByteLeadOne(char byte);
+	static void combineTwoBytes(char16_t &twoBytes, unsigned char nearStart, unsigned char nearEnd, bool isBigEndian = true);
+	static void divideTwoBytes(unsigned short bytes, char &nearStart, char &nearEnd, bool isBigEndian = true);
 public:
 	static int rest;
 
@@ -80,7 +83,8 @@ public:
 
 	int getLength() const;
 
-	char32_t &at(int offset) const;
+	char32_t &at(const int &offset) const;
+	char32_t &operator[](const int &offset) const;
 
 	UnicodeString &copyAssign(const UnicodeString &copied);
 	UnicodeString operator=(const UnicodeString &copied);
@@ -183,8 +187,8 @@ public:
 	// VarArray(Var *array, int length);
 	~VarArray();
 
-	Var &at(int offset) const;
-	Var &operator[](int offset) const;
+	Var &at(const int &offset) const;
+	Var &operator[](const int &offset) const;
 
 	VarArray *push(Var *item);
 	VarArray *pop(bool deleteOccupied = true);
@@ -253,13 +257,13 @@ public:
 	void set(double number);
 	void set(bool boolean);
 	void set(const UnicodeString &string);
-	void set(const String &rawString, UnicodeString::Coding coding = CODING_SETTING_DEFAULT);
-	void set(const char *cString, UnicodeString::Coding coding = CODING_SETTING_DEFAULT);
-	void set(char character, UnicodeString::Coding coding = CODING_SETTING_DEFAULT);
+	void set(const String &rawString, Coding coding = CODING_SETTING_DEFAULT);
+	void set(const char *cString, Coding coding = CODING_SETTING_DEFAULT);
+	void set(char character, Coding coding = CODING_SETTING_DEFAULT);
 	void set(HashTable *object);
 	void set(VarArray *array);
 
-	void write(UnicodeString::Coding coding = CODING_SETTING_DEFAULT, FILE *fp = stdout);
+	void write(Coding coding = CODING_SETTING_DEFAULT, FILE *fp = stdout);
 
 };
 
