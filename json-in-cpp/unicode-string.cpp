@@ -103,6 +103,32 @@ UnicodeString &UnicodeString::push(char32_t unicodeCharacter) {
 	return *this;
 }
 
+UnicodeString UnicodeString::operator+=(char32_t unicodeCharacter) {
+	return push(unicodeCharacter);
+}
+
+UnicodeString &UnicodeString::concat(const UnicodeString &right) {
+	char32_t *oldSource = source;
+	source = new char32_t[length + right.length + 1];
+	memcpy(source, oldSource, sizeof (source[0]) * length);
+	memcpy(source + length, right.source, sizeof (source[0]) * right.length);
+	length += right.length;
+	delete[] oldSource;
+	return *this;
+}
+
+UnicodeString &UnicodeString::concat(const char *cString, Coding coding) {
+	return concat(UnicodeString(cString, coding));
+}
+
+UnicodeString UnicodeString::operator+=(const UnicodeString &right) {
+	return concat(right);
+}
+
+UnicodeString UnicodeString::operator+=(const char *cString) {
+	return concat(cString);
+}
+
 UnicodeString &UnicodeString::copyAssign(const UnicodeString &copied) {
 	delete[] source;
 	length = copied.length;

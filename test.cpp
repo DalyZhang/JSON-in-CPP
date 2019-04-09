@@ -17,7 +17,7 @@ long long getFileSize(FILE *fp) {
 UnicodeString getFileContent(const char *fileName, Coding::Coding coding = Coding::UTF8) {
 	FILE *read = fopen(fileName, "rb");
 	long long fileSize = getFileSize(read);
-	char *buffer = new char[fileSize];
+	char buffer[fileSize];
 	fread(buffer, 1, fileSize, read);
 	fclose(read);
 	return UnicodeString(String(buffer, fileSize), coding);
@@ -176,21 +176,31 @@ void JSONTest() {
 	// 	puts("");
 	// }
 
-	UnicodeString data = getFileContent("test.json");
+	UnicodeString data = getFileContent("result.json");
+	// UnicodeString data = "\"4\\r\\n\\u4E3a\\uD83D\\uDC7F\\u4E3a\\t56\"";
 	Var *parsedData = JSON::decode(data);
-	parsedData->write(Coding::GBK);
+	UnicodeString *stringifiedData = JSON::encode(*parsedData);
+	stringifiedData->write(Coding::UTF8, fopen("result1.json", "wb"));
 	puts("");
+	// parsedData->write(Coding::GBK);
+	// puts("");
 
 	printf("String rest: %i\n", String::rest);
 	printf("UnicodeString rest: %i\n", UnicodeString::rest);
 	printf("Var rest: %i\n", Var::rest);
 	printf("HashTable rest: %i\n", HashTable::rest);
+	delete parsedData;
 	
 }
 
 int main() {
 
 	JSONTest();
+
+	// double test = atof("1e1000");
+	// int buffer[2];
+	// memcpy(buffer, &test, 8);
+	// printf("0x%08X 0x%08X", buffer[1], buffer[0]);
 
 	return 0;
 

@@ -85,55 +85,55 @@ Var::~Var() {
 	set();
 }
 
-Var::Type Var::getType() {
+Var::Type Var::getType() const {
 	return type;
 }
 
-double Var::number() {
+double Var::number() const {
 	return value.n;
 }
 
-bool Var::boolean() {
+bool Var::boolean() const {
 	return value.b;
 }
 
-UnicodeString &Var::string() {
+UnicodeString &Var::string() const {
 	return *value.s;
 }
 
-HashTable &Var::object() {
+HashTable &Var::object() const {
 	return *value.o;
 }
 
-VarArray &Var::array() {
+VarArray &Var::array() const {
 	return *value.a;
 }
 
-bool Var::is(Type type) {
+bool Var::is(Type type) const {
 	return this->type == type;
 }
 
-bool Var::isNull() {
+bool Var::isNull() const {
 	return is(T_NULL);
 }
 
-bool Var::isNumber() {
+bool Var::isNumber() const {
 	return is(T_NUMBER);
 }
 
-bool Var::isBoolean() {
+bool Var::isBoolean() const {
 	return is(T_BOOLEAN);
 }
 
-bool Var::isString() {
+bool Var::isString() const {
 	return is(T_STRING);
 }
 
-bool Var::isObject() {
+bool Var::isObject() const {
 	return is(T_OBJECT);
 }
 
-bool Var::isArray() {
+bool Var::isArray() const {
 	return is(T_ARRAY);
 }
 
@@ -210,7 +210,7 @@ void Var::set(VarArray *array) {
 	value.a = array;
 }
 
-void Var::write(Coding coding, FILE *fp) {
+void Var::write(Coding coding, FILE *fp) const {
 	switch (type) {
 	case T_NULL:
 		fprintf(fp, "null");

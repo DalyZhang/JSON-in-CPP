@@ -90,6 +90,12 @@ public:
 	char32_t &operator[](const int &offset) const;
 
 	UnicodeString &push(char32_t unicodeCharacter);
+	UnicodeString operator+=(char32_t unicodeCharacter);
+
+	UnicodeString &concat(const UnicodeString &right);
+	UnicodeString &concat(const char *cString, Coding coding = Coding::UTF8);
+	UnicodeString operator+=(const UnicodeString &right);
+	UnicodeString operator+=(const char *cString);
 	
 	UnicodeString &copyAssign(const UnicodeString &copied);
 	UnicodeString operator=(const UnicodeString &copied);
@@ -240,21 +246,21 @@ public:
 	Var(VarArray *array);
 	~Var();
 
-	Type getType();
+	Type getType() const;
 
-	double number();
-	bool boolean();
-	UnicodeString &string();
-	HashTable &object();
-	VarArray &array();
+	double number() const;
+	bool boolean() const;
+	UnicodeString &string() const;
+	HashTable &object() const;
+	VarArray &array() const;
 
-	bool is(Type type);
-	bool isNull();
-	bool isNumber();
-	bool isBoolean();
-	bool isString();
-	bool isObject();
-	bool isArray();
+	bool is(Type type) const;
+	bool isNull() const;
+	bool isNumber() const;
+	bool isBoolean() const;
+	bool isString() const;
+	bool isObject() const;
+	bool isArray() const;
 
 	void set();
 	void set(void *null);
@@ -268,7 +274,7 @@ public:
 	void set(HashTable *object);
 	void set(VarArray *array);
 
-	void write(Coding coding = CODING_SETTING_DEFAULT, FILE *fp = stdout);
+	void write(Coding coding = CODING_SETTING_DEFAULT, FILE *fp = stdout) const;
 
 };
 
@@ -294,6 +300,9 @@ private:
 	static bool fetchString(Var &container);
 	static bool exploreObject(Var &container);
 	static bool exploreArray(Var &container);
+
+	static UnicodeString *currentMaked;
+	static void recursivelyMakeString(const Var &container);
 public:
 	static Var *decode(const UnicodeString &decoded);
 	static UnicodeString *encode(const Var &encoded);

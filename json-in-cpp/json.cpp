@@ -3,8 +3,7 @@ int JSON::currentPos;
 const UnicodeString *JSON::currentDecoded = nullptr;
 
 bool JSON::explore(Var &container) {
-	TokenType tt = getNextTokenType();
-	switch (tt) {
+	switch (getNextTokenType()) {
 	case TT_NULL:
 		return fetchNull(container);
 	case TT_NUMBER:
@@ -383,6 +382,96 @@ bool JSON::exploreArray(Var &container) {
 
 }
 
+UnicodeString *JSON::currentMaked = nullptr;
+
+void JSON::recursivelyMakeString(const Var &container) {
+	char buffer[128];
+	switch (container.getType()) {
+
+	case Var::T_NULL:
+		currentMaked->concat("null");
+		return;
+
+	case Var::T_NUMBER:
+		sprintf(buffer, "%g", container.number());
+		if (buffer[2] == '#' || buffer[3] == '#') {
+			currentMaked->concat("null");
+		} else {
+			currentMaked->concat(buffer);
+		}
+		return;
+
+	case Var::T_BOOLEAN:
+		currentMaked->concat(container.boolean() ? "true" : "false");
+		return;
+
+	case Var::T_STRING: {
+			UnicodeString &string = container.string();
+			currentMaked->push(U'"');
+			for (int i1 = 0; i1 < string.getLength(); i1++) {
+				if ((string[i1] >= 0x0 && string[i1] < 0x20) ||
+					string[i1] == U'\\' || string[i1] == U'"') {
+					currentMaked->push(U'\\');
+				}
+				switch (string[i1]) {
+				case U'\\': case U'"':
+					currentMaked->push(string[i1]);
+					break;
+				case U'\b': currentMaked->push(U'b'); break;
+				case U'\f': currentMaked->push(U'f'); break;
+				case U'\n': currentMaked->push(U'n'); break;
+				case U'\r': currentMaked->push(U'r'); break;
+				case U'\t': currentMaked->push(U't'); break;
+				default:
+					if (string[i1] >= 0x0 && string[i1] < 0x20) {
+						sprintf(buffer, "u%04x", string[i1]);
+						currentMaked->concat(buffer);
+					} else {
+						currentMaked->push(string[i1]);
+					}
+				}
+			}
+			currentMaked->push(U'"');
+		}
+		return;
+
+	case Var::T_OBJECT: {
+			HashTable &object = container.object();
+			bool isFirst = true;
+			currentMaked->push(U'{');
+			for (auto &key : object) {
+				if (isFirst) {
+					isFirst = false;
+				} else {
+					currentMaked->push(U',');
+				}
+				recursivelyMakeString(Var(key));
+				currentMaked->push(U':');
+				recursivelyMakeString(object[key]);
+			}
+			currentMaked->push(U'}');
+		}
+		return;
+
+	case Var::T_ARRAY: {
+			VarArray &array = container.array();
+			bool isFirst = true;
+			currentMaked->push(U'[');
+			for (auto &item : array) {
+				if (isFirst) {
+					isFirst = false;
+				} else {
+					currentMaked->push(U',');
+				}
+				recursivelyMakeString(item);
+			}
+			currentMaked->push(U']');
+		}
+		return;
+
+	}
+}
+
 Var *JSON::decode(const UnicodeString &decoded) {
 	currentPos = 0;
 	currentDecoded = &decoded;
@@ -392,4 +481,10 @@ Var *JSON::decode(const UnicodeString &decoded) {
 		var = nullptr;
 	}
 	return var;
+}
+
+UnicodeString *JSON::encode(const Var &encoded) {
+	currentMaked = new UnicodeString;
+	recursivelyMakeString(encoded);
+	return currentMaked;
 }
