@@ -14,6 +14,15 @@ long long getFileSize(FILE *fp) {
 	return size;
 }
 
+UnicodeString getFileContent(const char *fileName, Coding::Coding coding = Coding::UTF8) {
+	FILE *read = fopen(fileName, "rb");
+	long long fileSize = getFileSize(read);
+	char *buffer = new char[fileSize];
+	fread(buffer, 1, fileSize, read);
+	fclose(read);
+	return UnicodeString(String(buffer, fileSize), coding);
+}
+
 void testHashTable1() {
 
 	HashTable ht(255);
@@ -155,16 +164,28 @@ void testCoding() {
 
 void JSONTest() {
 
-	Var *data = JSON::decode(UnicodeString("\"4\\r\\n\\u4E3a\\uD83D\\uDC7F\\u4E3a\\t56\""));
-	if (data == nullptr) {
-		puts("invalid json string");
-	} else {
-		printf("type: %i\n", data->getType());
-		printf("value: ");
-		data->write(Coding::UTF8, fopen("result.txt", "wb"));
-		puts("");
-	}
+	// // Var *data = JSON::decode(UnicodeString("\"4\\r\\n\\u4E3a\\uD83D\\uDC7F\\u4E3a\\t56\""));
+	// Var *data = JSON::decode(UnicodeString("[\"5\", {\"k\": [1, 2, false, \"哈哈哈哈哈\"]}, null, []]"));
+	// if (data == nullptr) {
+	// 	puts("invalid json string");
+	// } else {
+	// 	printf("type: %i\n", data->getType());
+	// 	printf("value: ");
+	// 	// data->write(Coding::UTF8, fopen("result.txt", "wb"));
+	// 	data->write(Coding::GBK);
+	// 	puts("");
+	// }
 
+	UnicodeString data = getFileContent("test.json");
+	Var *parsedData = JSON::decode(data);
+	parsedData->write(Coding::GBK);
+	puts("");
+
+	printf("String rest: %i\n", String::rest);
+	printf("UnicodeString rest: %i\n", UnicodeString::rest);
+	printf("Var rest: %i\n", Var::rest);
+	printf("HashTable rest: %i\n", HashTable::rest);
+	
 }
 
 int main() {

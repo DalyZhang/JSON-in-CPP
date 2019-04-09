@@ -4,7 +4,6 @@ const UnicodeString *JSON::currentDecoded = nullptr;
 
 bool JSON::explore(Var &container) {
 	TokenType tt = getNextTokenType();
-	printf("token: %i\n", tt);
 	switch (tt) {
 	case TT_NULL:
 		return fetchNull(container);
@@ -79,9 +78,6 @@ bool JSON::fetchNumber(Var &container) {
 			return false;
 		}
 	}
-	puts("module 1 finished");
-	numberString.write();
-	puts("");
 	
 	u4c1 = currentDecoded->at(currentPos);
 	if (u4c1 == U'0') {
@@ -103,9 +99,6 @@ bool JSON::fetchNumber(Var &container) {
 			}
 		}
 	}
-	puts("module 2 finished");
-	numberString.write();
-	puts("");
 
 	int fractionDigitNum = 0;
 	u4c1 = currentDecoded->at(currentPos);
@@ -113,7 +106,6 @@ bool JSON::fetchNumber(Var &container) {
 		numberString.push('.');
 		while (true) {
 			currentPos++;
-			printf("currentPos: %i\n", currentPos);
 			if (currentPos == currentDecoded->getLength()) {
 				break;
 			}
@@ -126,16 +118,12 @@ bool JSON::fetchNumber(Var &container) {
 			}
 		}
 		if (fractionDigitNum == 0) {
-			puts("die2");
 			return false;
 		} else if (currentPos == currentDecoded->getLength()) {
 			container.set(atof(numberString.cString()));
 			return true;
 		}
 	}
-	puts("module 3 finished");
-	numberString.write();
-	puts("");
 	
 	u4c1 = currentDecoded->at(currentPos);
 	if (u4c1 == U'e' || u4c1 == U'E') {
@@ -154,9 +142,6 @@ bool JSON::fetchNumber(Var &container) {
 				return false;
 			}
 		}
-		puts("module 4.1 finished");
-		numberString.write();
-		puts("");
 
 		fractionDigitNum = 0;
 		while (true) {
@@ -173,17 +158,10 @@ bool JSON::fetchNumber(Var &container) {
 			}
 		}
 		if (fractionDigitNum == 0) {
-			numberString.write();
 			return false;
 		}
-		puts("module 4.2 finished");
-		numberString.write();
-		puts("");
 
 	}
-	puts("module 4 finished");
-	numberString.write();
-	puts("");
 	
 	container.set(atof(numberString.cString()));
 	return true;
@@ -285,14 +263,7 @@ bool JSON::fetchString(Var &container) {
 			if (currentDecoded->at(currentPos) >= 0 && currentDecoded->at(currentPos) < 0x20) {
 				return false;
 			}
-			printf("string before: ");
-			string.write();
-			puts("");
 			string.push(currentDecoded->at(currentPos));
-			printf("push: %c\n", currentDecoded->at(currentPos));
-			printf("string after: ");
-			string.write();
-			puts("");
 
 		}
 
@@ -311,10 +282,105 @@ bool JSON::fetchString(Var &container) {
 
 bool JSON::exploreObject(Var &container) {
 
+	bool isFirst = true;
+	container.set(new HashTable);
+	Var key, *value = nullptr;
+	while (true) {
+
+		if (isFirst) {
+			isFirst = false;
+			switch (getNextTokenType()) {
+			case TT_OBJECT_END:
+				return true;
+			case TT_STRING:
+				break;
+			default:
+				return false;
+			}
+		} else {
+
+			switch (getNextTokenType()) {
+			case TT_OBJECT_END:
+				return true;
+			case TT_COMMA:
+				break;
+			default:
+				return false;
+			}
+
+			if (getNextTokenType() != TT_STRING) {
+				return false;
+			}
+
+		}
+
+		if (!fetchString(key)) {
+			return false;
+		}
+		if (getNextTokenType() != TT_COLON) {
+			return false;
+		}
+		value = new Var;
+		if (!explore(*value)) {
+			delete value;
+			return false;
+		}
+		container.object().set(key.string(), value);
+
+	}
+
 }
 
 bool JSON::exploreArray(Var &container) {
 	
+	bool isFirst = true;
+	container.set(new VarArray);
+	Var *item = nullptr;
+	TokenType tokenType;
+	while (true) {
+
+		if (isFirst) {
+			isFirst = false;
+			switch (getNextTokenType()) {
+			case TT_ARRAY_END:
+				return true;
+			case TT_NULL: case TT_NUMBER: case TT_BOOLEAN:
+			case TT_STRING: case TT_ARRAY: case TT_OBJECT:
+				break;
+			default:
+				return false;
+			}
+		} else {
+
+			switch (getNextTokenType()) {
+			case TT_ARRAY_END:
+				return true;
+			case TT_COMMA:
+				break;
+			default:
+				return false;
+			}
+
+			switch (getNextTokenType()) {
+			case TT_NULL: case TT_NUMBER: case TT_BOOLEAN:
+			case TT_STRING: case TT_ARRAY: case TT_OBJECT:
+				break;
+			default:
+				return false;
+			}
+
+		}
+
+		currentPos--;
+		item = new Var;
+		if (!explore(*item)) {
+			delete item;
+			return false;
+		}
+		container.array().push(item);
+
+	}
+
 }
 
 Var *JSON::decode(const UnicodeString &decoded) {
