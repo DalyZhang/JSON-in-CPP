@@ -41,6 +41,8 @@ public:
 
 	char &at(const int &offset) const;
 	char &operator[](const int &offset) const;
+	
+	String &push(char character);
 
 	String &copyAssign(const char *cString);
 	String &copyAssign(const String &copied);
@@ -66,7 +68,6 @@ private:
 	static void createCodingTableGBK();
 	int length;
 	char32_t *source = nullptr;
-	UnicodeString(const char32_t *copiedSource, int length);
 	static int countByteLeadOne(char byte);
 	static void combineTwoBytes(char16_t &twoBytes, unsigned char nearStart, unsigned char nearEnd, bool isBigEndian = true);
 	static void divideTwoBytes(unsigned short bytes, char &nearStart, char &nearEnd, bool isBigEndian = true);
@@ -77,6 +78,8 @@ public:
 
 	UnicodeString();
 	UnicodeString(const UnicodeString &copied);
+	UnicodeString(const char32_t *copiedSource, int length);
+	// UnicodeString(const UnicodeString &copied, int start, int end);
 	UnicodeString(const char *cString, Coding coding = CODING_SETTING_DEFAULT);
 	UnicodeString(const String &encoded, Coding coding = CODING_SETTING_DEFAULT);
 	~UnicodeString();
@@ -86,6 +89,8 @@ public:
 	char32_t &at(const int &offset) const;
 	char32_t &operator[](const int &offset) const;
 
+	UnicodeString &push(char32_t unicodeCharacter);
+	
 	UnicodeString &copyAssign(const UnicodeString &copied);
 	UnicodeString operator=(const UnicodeString &copied);
 
@@ -267,10 +272,38 @@ public:
 
 };
 
+class JSON {
+private:
+	enum TokenType {
+		TT_ERROR, TT_END,
+		TT_NULL, TT_NUMBER, TT_BOOLEAN, TT_STRING,
+		TT_OBJECT, TT_OBJECT_END, 
+		TT_ARRAY, TT_ARRAY_END,
+		TT_COLON, TT_COMMA
+	};
+
+	static int currentPos;
+	static const UnicodeString *currentDecoded;
+	
+	static bool explore(Var &container);
+	static TokenType getNextTokenType();
+
+	static bool fetchNull(Var &container);
+	static bool fetchNumber(Var &container);
+	static bool fetchBoolean(Var &container);
+	static bool fetchString(Var &container);
+	static bool exploreObject(Var &container);
+	static bool exploreArray(Var &container);
+public:
+	static Var *decode(const UnicodeString &decoded);
+	static UnicodeString *encode(const Var &encoded);
+};
+
 #include "string.cpp"
 #include "unicode-string.cpp"
 #include "hash-table.cpp"
 #include "var-array.cpp"
 #include "var.cpp"
+#include "json.cpp"
 
 #endif

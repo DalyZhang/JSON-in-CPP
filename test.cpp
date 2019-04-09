@@ -143,19 +143,33 @@ void testCoding() {
 	printf("unicode string length: %i\n", uString.getLength());
 
 	FILE *writen = fopen("result.txt", "wb");
-	fputc(0xFE, writen);
-	fputc(0xFF, writen);
 	// fputc(0xFE, writen);
-	uString.write(Coding::UTF16BE, writen);
+	// fputc(0xFF, writen);
+	// fputc(0xFE, writen);
+	uString.write(Coding::UTF8, writen);
 	for (int i1 = 0; i1 < uString.getLength(); i1++) {
 		printf(" 0x%X", uString[i1]);
 	}
 
 }
 
+void JSONTest() {
+
+	Var *data = JSON::decode(UnicodeString("\"4\\r\\n\\u4E3a\\uD83D\\uDC7F\\u4E3a\\t56\""));
+	if (data == nullptr) {
+		puts("invalid json string");
+	} else {
+		printf("type: %i\n", data->getType());
+		printf("value: ");
+		data->write(Coding::UTF8, fopen("result.txt", "wb"));
+		puts("");
+	}
+
+}
+
 int main() {
 
-	testCoding();
+	JSONTest();
 
 	return 0;
 

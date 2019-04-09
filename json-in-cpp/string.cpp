@@ -38,11 +38,25 @@ const char *String::cString() {
 }
 
 char &String::at(const int &offset) const {
-	return source[offset];
+	if (offset < 0) {
+		return source[length - offset];
+	} else {
+		return source[offset];
+	}
+}
+	
+String &String::push(char character) {
+	char *oldSource = source;
+	source = new char[length + 2]{};
+	memcpy(source, oldSource, sizeof (source[0]) * length);
+	source[length] = character;
+	length++;
+	delete[] oldSource;
+	return *this;
 }
 
 char &String::operator[](const int &offset) const {
-	return source[offset];
+	return at(offset);
 }
 
 String &String::copyAssign(const char *cString) {

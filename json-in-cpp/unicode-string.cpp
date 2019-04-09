@@ -12,12 +12,12 @@ char32_t UnicodeString::createCodingTable() {
 void UnicodeString::createCodingTableGBK() {
 	int rawTable[] = CODING_FILE_GBK;
 	int rawTableLength = sizeof (rawTable) / sizeof (rawTable[0]);
-	unsigned int GBKChar, UnicodeChar;
+	unsigned int GBKChar, unicodeCharacter;
 	for (int i1 = 0; i1 < rawTableLength; i1 += 2) {
 		GBKChar = rawTable[i1];
-		UnicodeChar = rawTable[i1 + 1];
-		GBKToUnicodeTable[GBKChar] = UnicodeChar;
-		UnicodeToGBKTable[UnicodeChar] = GBKChar;
+		unicodeCharacter = rawTable[i1 + 1];
+		GBKToUnicodeTable[GBKChar] = unicodeCharacter;
+		UnicodeToGBKTable[unicodeCharacter] = GBKChar;
 	}
 }
 
@@ -82,11 +82,25 @@ int UnicodeString::getLength() const {
 }
 
 char32_t &UnicodeString::at(const int &offset) const {
-	return source[offset];
+	if (offset < 0) {
+		return source[length + offset];
+	} else {
+		return source[offset];
+	}
 }
 
 char32_t &UnicodeString::operator[](const int &offset) const {
-	return source[offset];
+	return at(offset);
+}
+
+UnicodeString &UnicodeString::push(char32_t unicodeCharacter) {
+	char32_t *oldSource = source;
+	source = new char32_t[length + 2]{};
+	memcpy(source, oldSource, sizeof (source[0]) * length);
+	source[length] = unicodeCharacter;
+	length++;
+	delete[] oldSource;
+	return *this;
 }
 
 UnicodeString &UnicodeString::copyAssign(const UnicodeString &copied) {
@@ -224,7 +238,7 @@ void UnicodeString::encodeAssign(UnicodeString &target, const String &encoded, C
 					break;
 				}
 				i1 += 2;
-				source[i2] = ((u2c1 & ~(~0 << 10)) << 10) | (u2c2 & ~(~0 << 10)) + 0x10000;
+				source[i2] = (((u2c1 & ~(~0 << 10)) << 10) | (u2c2 & ~(~0 << 10))) + 0x10000;
 			}
 		}
 		length = i2;
